@@ -5,88 +5,60 @@ import { Notify } from 'notiflix/build/notiflix-notify-aio';
 const refs = {
   form: document.querySelector('.search-form'),
   gallery: document.querySelector('.gallery'),
-  btn: document.querySelector('#btn-load-more'),
+  btn: document.querySelector('.load-more'),
 };
 
 let request = null;
 let page = 1;
-let btnEvent = null;
 
 function onSubmit(e) {
   e.preventDefault();
-  clear();
-  btrOffRender();
+  reRequest();
 
   request = e.target[0].value.trim();
-  page = 1;
-
   if (!request) {
     errorRequest();
     return;
   }
 
-  fetchImages(request, page)
-    .then(data => {
-      // btnEvent.disabled = true;
-      galleryRender(data.hits);
-      btrOnRender();
-      // btnEvent.disabled = false;
-      return data;
-    })
+  fetchGallery(request, page)
     .then(data => {
       Notify.info(`Hooray! We found ${data.totalHits} images.`, {
         timeout: 5000,
       });
-      return data;
-    })
-    .then(data => {
-      if (data.hits.length < 40) {
-        btnOffEvent();
-        btrOffRender();
-      }
-      return data;
     })
     .catch(errorRequest);
 }
 
 function onLoadMore() {
-  btnEvent.disabled = true;
+  refs.btn.classList.add('visually-hidden');
   page += 1;
-  fetchImages(request, page)
+
+  fetchGallery(request, page);
+}
+
+function fetchGallery(request, page) {
+  return fetchImages(request, page)
+    .then(data => {
+      if (!data.hits.length) {
+        throw new Error(response.status);
+      }
+      return data;
+    })
     .then(data => {
       galleryRender(data.hits);
       return data;
     })
     .then(data => {
-      btnEvent.disabled = false;
-      return data;
-    })
-    .then(data => {
       if (data.hits.length < 40) {
-        btnOffEvent();
-        btrOffRender();
+        endRequest();
+        return;
       }
-      return data;
-    })
-    .catch(errorRequest);
-}
 
-// function fechGallery(request, page) {
-//   return fetchImages(request, page)
-//     .then(data => {
-//       // btnEvent.disabled = true;
-//       galleryRender(data.hits);
-//       // btnEvent.disabled = false;
-//       return data;
-//     })
-//     .then(data => {
-//       if (data.hits.length < 40) {
-//         btrOffRender();
-//       }
-//       return data;
-//     })
-//     .catch(errorRequest);
-// }
+      refs.btn.classList.remove('visually-hidden');
+      return data;
+    });
+}
 
 function galleryRender(arr) {
   const images = arr
@@ -106,27 +78,10 @@ function galleryRender(arr) {
   refs.gallery.insertAdjacentHTML('beforeend', images);
 }
 
-function btrOnRender() {
-  const btn = `<button type="button" class="load-more">Load more</button>`;
-  refs.btn.insertAdjacentHTML('beforeend', btn);
-  btnEvent = document.querySelector('.load-more');
-  btnEvent.addEventListener('click', onLoadMore);
-}
-
-function btrOffRender() {
-  refs.btn.innerHTML = '';
-}
-
-// function btnOnEvent() {
-//   btnEvent.addEventListener('click', onLoadMore);
-// }
-
-function btnOffEvent() {
-  btnEvent.removeEventListener('click', onLoadMore);
-}
-
-function clear() {
+function reRequest() {
+  page = 1;
   refs.gallery.innerHTML = '';
+  refs.btn.classList.add('visually-hidden');
 }
 
 function errorRequest() {
@@ -134,5 +89,11 @@ function errorRequest() {
     timeout: 5000,
   });
 }
+function endRequest() {
+  Notify.warning("We're sorry, but you've reached the end of search results.", {
+    timeout: 5000,
+  });
+}
 
 refs.form.addEventListener('submit', onSubmit);
+refs.btn.addEventListener('click', onLoadMore);
