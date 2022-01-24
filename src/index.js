@@ -1,6 +1,8 @@
 import './css/styles.css';
 import fetchImages from './js/fetchImages';
 import { Notify } from 'notiflix/build/notiflix-notify-aio';
+import SimpleLightbox from 'simplelightbox';
+import 'simplelightbox/dist/simple-lightbox.min.css';
 
 const refs = {
   form: document.querySelector('.search-form'),
@@ -10,6 +12,11 @@ const refs = {
 
 let request = null;
 let page = 1;
+
+let gallery = new SimpleLightbox('.gallery a', {
+  captionPosition: 'bottom',
+  captionSelector: 'img',
+});
 
 function onSubmit(e) {
   e.preventDefault();
@@ -34,7 +41,7 @@ function onLoadMore() {
   refs.btn.classList.add('visually-hidden');
   page += 1;
 
-  fetchGallery(request, page);
+  fetchGallery(request, page).then(fn);
 }
 
 function fetchGallery(request, page) {
@@ -47,6 +54,7 @@ function fetchGallery(request, page) {
     })
     .then(data => {
       galleryRender(data.hits);
+      gallery.refresh();
       return data;
     })
     .then(data => {
@@ -62,9 +70,11 @@ function fetchGallery(request, page) {
 
 function galleryRender(arr) {
   const images = arr
-    .map(({ webformatURL, tags, likes, views, comments, downloads }) => {
+    .map(({ webformatURL, tags, likes, views, comments, downloads, largeImageURL }) => {
       return `<div class="photo-card">
-          <img class="photo-card-img" src="${webformatURL}" alt="${tags}" loading="lazy" />
+          <a class="link" href="${largeImageURL}"
+            ><img class="photo-card-img" src="${webformatURL}" alt="${tags}" loading="lazy"
+          /></a>
           <div class="photo-card-info">
             <p class="info-item"><b>Likes</b> ${likes}</p>
             <p class="info-item"><b>Views</b> ${views}</p>
@@ -89,9 +99,21 @@ function errorRequest() {
     timeout: 5000,
   });
 }
+
 function endRequest() {
   Notify.warning("We're sorry, but you've reached the end of search results.", {
     timeout: 5000,
+  });
+}
+
+function fn() {
+  const { height: cardHeight } = document
+    .querySelector('.gallery')
+    .firstElementChild.getBoundingClientRect();
+
+  window.scrollBy({
+    top: cardHeight * 2,
+    behavior: 'smooth',
   });
 }
 

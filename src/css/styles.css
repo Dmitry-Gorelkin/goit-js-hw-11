@@ -12,6 +12,10 @@ body {
   line-height: 1.5;
 }
 
+.link {
+  text-decoration: none; /* убирает все подчеркивания */
+}
+
 .visually-hidden {
   position: absolute;
   width: 1px;
