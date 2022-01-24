@@ -38,10 +38,12 @@ function onSubmit(e) {
 }
 
 function onLoadMore() {
-  refs.btn.classList.add('visually-hidden');
+  // refs.btn.classList.add('visually-hidden');
+  refs.btn.disabled = true;
+  refs.btn.textContent = 'Loading...';
   page += 1;
 
-  fetchGallery(request, page).then(fn);
+  fetchGallery(request, page).then(fnScroll);
 }
 
 function fetchGallery(request, page) {
@@ -55,10 +57,13 @@ function fetchGallery(request, page) {
     .then(data => {
       galleryRender(data.hits);
       gallery.refresh();
+      refs.btn.disabled = false;
+      refs.btn.textContent = 'Load more';
       return data;
     })
     .then(data => {
       if (data.hits.length < 40) {
+        refs.btn.classList.add('visually-hidden');
         endRequest();
         return;
       }
@@ -106,7 +111,7 @@ function endRequest() {
   });
 }
 
-function fn() {
+function fnScroll() {
   const { height: cardHeight } = document
     .querySelector('.gallery')
     .firstElementChild.getBoundingClientRect();
