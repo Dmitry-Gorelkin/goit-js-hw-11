@@ -1,5 +1,6 @@
 import './css/styles.css';
 import fetchImages from './js/fetchImages';
+import fnScroll from './js/fnScroll';
 import { Notify } from 'notiflix/build/notiflix-notify-aio';
 import SimpleLightbox from 'simplelightbox';
 import 'simplelightbox/dist/simple-lightbox.min.css';
@@ -10,6 +11,7 @@ const refs = {
   btn: document.querySelector('.load-more'),
 };
 
+const PER_PAGE = 40;
 let request = null;
 let page = 1;
 
@@ -28,7 +30,7 @@ function onSubmit(e) {
     return;
   }
 
-  fetchGallery(request, page)
+  fetchGallery(request, page, PER_PAGE)
     .then(data => {
       Notify.info(`Hooray! We found ${data.totalHits} images.`, {
         timeout: 5000,
@@ -38,16 +40,15 @@ function onSubmit(e) {
 }
 
 function onLoadMore() {
-  // refs.btn.classList.add('visually-hidden');
   refs.btn.disabled = true;
   refs.btn.textContent = 'Loading...';
   page += 1;
 
-  fetchGallery(request, page).then(fnScroll);
+  fetchGallery(request, page, PER_PAGE).then(fnScroll).catch(errorRequest);
 }
 
-function fetchGallery(request, page) {
-  return fetchImages(request, page)
+function fetchGallery(request, page, per_page) {
+  return fetchImages(request, page, per_page)
     .then(data => {
       if (!data.hits.length) {
         throw new Error(response.status);
@@ -62,10 +63,12 @@ function fetchGallery(request, page) {
       return data;
     })
     .then(data => {
-      if (data.hits.length < 40) {
+      const maxPage = Math.ceil(data.totalHits / PER_PAGE);
+
+      if (data.hits.length < 40 || page === maxPage) {
         refs.btn.classList.add('visually-hidden');
         endRequest();
-        return;
+        return data;
       }
 
       refs.btn.classList.remove('visually-hidden');
@@ -108,17 +111,6 @@ function errorRequest() {
 function endRequest() {
   Notify.warning("We're sorry, but you've reached the end of search results.", {
     timeout: 5000,
-  });
-}
-
-function fnScroll() {
-  const { height: cardHeight } = document
-    .querySelector('.gallery')
-    .firstElementChild.getBoundingClientRect();
-
-  window.scrollBy({
-    top: cardHeight * 2,
-    behavior: 'smooth',
   });
 }
 
