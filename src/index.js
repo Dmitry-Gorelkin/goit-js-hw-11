@@ -65,7 +65,7 @@ function fetchGallery(request, page, per_page) {
     .then(data => {
       const maxPage = Math.ceil(data.totalHits / PER_PAGE);
 
-      if (data.hits.length < 40 || page === maxPage) {
+      if (data.hits.length < PER_PAGE || page === maxPage) {
         refs.btn.classList.add('visually-hidden');
         endRequest();
         return data;
